@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>PC Remote</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: #09090b;
+            color: #fafafa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: #09090b;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #18181b;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e80;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #27272a;
+            margin: 0 20px;
+        }
+
+        /* Trackpad */
+        .trackpad-container {
+            padding: 16px 16px 12px;
+        }
+
+        .trackpad {
+            width: 100%;
+            height: 260px;
+            background: #18181b;
+            border-radius: 20px;
+            border: 1.5px solid #27272a;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .trackpad.active {
+            border-color: #3b82f6;
+            background: #1c1c2e;
+        }
+
+        .trackpad-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #3b82f6 0%, #3b82f600 70%);
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .trackpad.active .trackpad-dot {
+            opacity: 1;
+        }
+
+        .trackpad-hint {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #52525b;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .trackpad.active .trackpad-hint {
+            color: #3b82f6;
+        }
+
+        /* Click Buttons */
+        .click-row {
+            display: flex;
+            gap: 10px;
+            padding: 0 16px 14px;
+        }
+
+        .click-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            border: 1.5px solid #27272a;
+            border-radius: 14px;
+            background: #18181b;
+            color: #a1a1aa;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .click-btn:active {
+            transform: scale(0.96);
+            background: #27272a;
+            color: #fafafa;
+            border-color: #3f3f46;
+        }
+
+        .click-btn i {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Section */
+        .section {
+            padding: 0 16px 14px;
+        }
+
+        .section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #52525b;
+            margin-bottom: 10px;
+            padding-left: 4px;
+            font-weight: 600;
+        }
+
+        /* Media Controls */
+        .media-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #18181b;
+            border: 1.5px solid #27272a;
+            border-radius: 18px;
+            padding: 16px 12px;
+        }
+
+        .media-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            background: #27272a;
+            color: #a1a1aa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .media-btn:active {
+            transform: scale(0.9);
+            background: #3f3f46;
+            color: #fafafa;
+        }
+
+        .media-btn i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .media-btn.play-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: #fff;
+            margin: 0 8px;
+        }
+
+        .media-btn.play-btn:active {
+            background: #1d4ed8;
+        }
+
+        .media-btn.play-btn i {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Volume Slider */
+        .volume-card {
+            background: #18181b;
+            border: 1.5px solid #27272a;
+            border-radius: 18px;
+            padding: 18px 20px;
+        }
+
+        .volume-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .volume-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .volume-icon-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 10px;
+            background: #27272a;
+            color: #a1a1aa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .volume-icon-btn:active {
+            transform: scale(0.9);
+            background: #3f3f46;
+            color: #fafafa;
+        }
+
+        .volume-icon-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .volume-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+
+        .volume-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fafafa;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* Custom Slider */
+        .slider-track {
+            width: 100%;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .slider-bg {
+            width: 100%;
+            height: 6px;
+            background: #27272a;
+            border-radius: 3px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .slider-fill {
+            height: 100%;
+            background: #2563eb;
+            border-radius: 3px;
+            width: 50%;
+            transition: width 0.05s linear;
+        }
+
+        .slider-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fafafa;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px #00000080;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .slider-thumb:active {
+            cursor: grabbing;
+            box-shadow: 0 2px 12px #000000a0;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Quick Actions Row */
+        .quick-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .quick-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 8px;
+            border: 1.5px solid #27272a;
+            border-radius: 14px;
+            background: #18181b;
+            color: #a1a1aa;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .quick-btn:active {
+            transform: scale(0.94);
+            background: #27272a;
+            color: #fafafa;
+            border-color: #3f3f46;
+        }
+
+        .quick-btn i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .quick-btn.back-btn {
+            border-color: #7f1d1d40;
+            color: #f87171;
+        }
+
+        .quick-btn.back-btn:active {
+            background: #7f1d1d30;
+            border-color: #7f1d1d80;
+            color: #fca5a5;
+        }
+
+        /* Keyboard Section */
+        .keyboard-section {
+            padding: 0 16px 14px;
+        }
+
+        .kb-toggle {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #27272a;
+            border-radius: 14px;
+            background: #18181b;
+            color: #71717a;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .kb-toggle.active {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #0c1929;
+        }
+
+        .kb-toggle i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .kb-panel {
+            display: none;
+            margin-top: 10px;
+            background: #18181b;
+            border: 1.5px solid #27272a;
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .kb-panel.show {
+            display: block;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #27272a;
+            border-radius: 12px;
+            background: #09090b;
+            color: #fafafa;
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+
+        .text-input:focus {
+            border-color: #3b82f6;
+        }
+
+        .text-input::placeholder {
+            color: #52525b;
+        }
+
+        .type-send-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            background: #2563eb;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 14px;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+
+        .type-send-btn:active {
+            background: #1d4ed8;
+        }
+
+        .special-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .sp-key {
+            padding: 11px 6px;
+            border: 1px solid #27272a;
+            border-radius: 10px;
+            background: #09090b;
+            color: #a1a1aa;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.12s;
+            text-align: center;
+        }
+
+        .sp-key:active {
+            background: #27272a;
+            color: #fafafa;
+            transform: scale(0.95);
+        }
+
+        /* Shutdown */
+        .bottom-section {
+            padding: 8px 16px 32px;
+        }
+
+        .shutdown-btn {
+            width: 100%;
+            padding: 13px;
+            border: 1.5px solid #27272a;
+            border-radius: 14px;
+            background: transparent;
+            color: #52525b;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s;
+        }
+
+        .shutdown-btn:active {
+            background: #18181b;
+            color: #ef4444;
+            border-color: #7f1d1d40;
+        }
+
+        .shutdown-btn i {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #27272a;
+            color: #fafafa;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            border: 1px solid #3f3f46;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>PC Remote by Sehal Hussain</h1>
+        </div>
+        <div class="status-pill">
+            <div class="status-dot" id="statusDot"></div>
+            Connected
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Trackpad -->
+    <div class="trackpad-container">
+        <div class="trackpad" id="trackpad">
+            <div class="trackpad-dot" id="trackpadDot"></div>
+            <span class="trackpad-hint">Tap to click · Hold for right-click · Two-finger scroll</span>
+        </div>
+    </div>
+
+    <!-- Click Buttons -->
+    <div class="click-row">
+        <button class="click-btn" onclick="sendClick('left')">
+            <i data-lucide="mouse-pointer-click"></i>
+            Left Click
+        </button>
+        <button class="click-btn" onclick="sendClick('double')">
+            <i data-lucide="mouse-pointer-2"></i>
+            Double Click
+        </button>
+        <button class="click-btn" onclick="sendClick('right')">
+            <i data-lucide="mouse-pointer"></i>
+            Right Click
+        </button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+        <div class="section-label">Quick Actions</div>
+        <div class="quick-row">
+            <button class="quick-btn back-btn" onclick="sendHotkey('alt', 'left')">
+                <i data-lucide="arrow-left"></i>
+                Back
+            </button>
+            <button class="quick-btn" onclick="sendKey('fullscreen')">
+                <i data-lucide="maximize-2"></i>
+                Fullscreen
+            </button>
+            <button class="quick-btn" onclick="sendHotkey('alt', 'tab')">
+                <i data-lucide="layers"></i>
+                Alt+Tab
+            </button>
+            <button class="quick-btn" onclick="sendHotkey('win', 'd')">
+                <i data-lucide="monitor"></i>
+                Desktop
+            </button>
+        </div>
+    </div>
+
+    <!-- Media Controls -->
+    <div class="section">
+        <div class="section-label">Media</div>
+        <div class="media-card">
+            <button class="media-btn" onclick="sendKey('prevtrack')">
+                <i data-lucide="skip-back"></i>
+            </button>
+            <button class="media-btn" onclick="sendKey('stop')">
+                <i data-lucide="square"></i>
+            </button>
+            <button class="media-btn play-btn" onclick="sendKey('playpause')">
+                <i data-lucide="play"></i>
+            </button>
+            <button class="media-btn" onclick="sendKey('stop')">
+                <i data-lucide="square"></i>
+            </button>
+            <button class="media-btn" onclick="sendKey('nexttrack')">
+                <i data-lucide="skip-forward"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Volume -->
+    <div class="section">
+        <div class="section-label">Volume</div>
+        <div class="volume-card">
+            <div class="volume-header">
+                <div class="volume-header-left">
+                    <button class="volume-icon-btn" onclick="toggleMute()">
+                        <div id="muteIconWrapper"><i data-lucide="volume-2"></i></div>
+                    </button>
+                    <span class="volume-label">Volume</span>
+                </div>
+                <span class="volume-value" id="volumeValue">50%</span>
+            </div>
+            <div class="slider-track" id="sliderTrack">
+                <div class="slider-bg">
+                    <div class="slider-fill" id="sliderFill"></div>
+                    <div class="slider-thumb" id="sliderThumb"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard-section">
+        <button class="kb-toggle" id="kbToggle" onclick="toggleKeyboard()">
+            <i data-lucide="keyboard"></i>
+            Keyboard
+        </button>
+        <div class="kb-panel" id="kbPanel">
+            <input type="text" class="text-input" id="textInput" placeholder="Type text to send..." autocomplete="off"
+                autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button class="type-send-btn" onclick="sendType()">Send to PC</button>
+            <div class="special-grid">
+                <button class="sp-key" onclick="sendKey('enter')">Enter</button>
+                <button class="sp-key" onclick="sendKey('backspace')">Backspace</button>
+                <button class="sp-key" onclick="sendKey('space')">Space</button>
+                <button class="sp-key" onclick="sendKey('escape')">Esc</button>
+                <button class="sp-key" onclick="sendKey('tab')">Tab</button>
+                <button class="sp-key" onclick="sendKey('delete')">Delete</button>
+                <button class="sp-key" onclick="sendKey('home')">Home</button>
+                <button class="sp-key" onclick="sendKey('end')">End</button>
+                <button class="sp-key" onclick="sendKey('up')">↑ Up</button>
+                <button class="sp-key" onclick="sendKey('down')">↓ Down</button>
+                <button class="sp-key" onclick="sendKey('left')">← Left</button>
+                <button class="sp-key" onclick="sendKey('right')">→ Right</button>
+                <button class="sp-key" onclick="sendKey('f11')">F11</button>
+                <button class="sp-key" onclick="sendKey('f5')">F5</button>
+                <button class="sp-key" onclick="sendHotkey('ctrl', 'c')">Ctrl+C</button>
+                <button class="sp-key" onclick="sendHotkey('ctrl', 'v')">Ctrl+V</button>
+                <button class="sp-key" onclick="sendHotkey('ctrl', 'z')">Ctrl+Z</button>
+                <button class="sp-key" onclick="sendHotkey('ctrl', 'a')">Ctrl+A</button>
+                <button class="sp-key" onclick="sendHotkey('alt', 'f4')">Alt+F4</button>
+                <button class="sp-key" onclick="sendHotkey('win')">Win</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shutdown -->
+    <div class="bottom-section">
+        <button class="shutdown-btn" onclick="shutdownServer()">
+            <i data-lucide="power"></i>
+            Stop Server
+        </button>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // ==================== TRACKPAD ====================
+        const trackpad = document.getElementById('trackpad');
+        const trackpadDot = document.getElementById('trackpadDot');
+
+        let touchState = {
+            active: false,
+            startX: 0, startY: 0,
+            lastX: 0, lastY: 0,
+            startTime: 0,
+            moved: false,
+            isTwoFinger: false,
+            twoFingerLastY: 0
+        };
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === trackpad || trackpad.contains(e.target)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        trackpad.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touches = e.touches;
+
+            if (touches.length >= 2) {
+                touchState.isTwoFinger = true;
+                touchState.twoFingerLastY = (touches[0].clientY + touches[1].clientY) / 2;
+                return;
+            }
+
+            const touch = touches[0];
+            const rect = trackpad.getBoundingClientRect();
+            touchState.active = true;
+            touchState.startX = touch.clientX;
+            touchState.startY = touch.clientY;
+            touchState.lastX = touch.clientX;
+            touchState.lastY = touch.clientY;
+            touchState.startTime = Date.now();
+            touchState.moved = false;
+
+            trackpad.classList.add('active');
+            trackpadDot.style.left = (touch.clientX - rect.left) + 'px';
+            trackpadDot.style.top = (touch.clientY - rect.top) + 'px';
+
+            // Long press timer for right click
+            touchState.longPressTimer = setTimeout(() => {
+                if (!touchState.moved && touchState.active) {
+                    sendClick('right');
+                    touchState.moved = true;
+                    showToast('Right click');
+                }
+            }, 500);
+        });
+
+        trackpad.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touches = e.touches;
+
+            if (touchState.isTwoFinger && touches.length >= 2) {
+                clearTimeout(touchState.longPressTimer);
+                const currentY = (touches[0].clientY + touches[1].clientY) / 2;
+                const delta = touchState.twoFingerLastY - currentY;
+                if (Math.abs(delta) > 8) {
+                    const scrollAmt = delta > 0 ? 4 : -4;
+                    fetch('/scroll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ y: scrollAmt })
+                    });
+                    touchState.twoFingerLastY = currentY;
+                }
+                return;
+            }
+
+            if (touches.length === 1 && touchState.active) {
+                const touch = touches[0];
+                const rect = trackpad.getBoundingClientRect();
+                const dx = touch.clientX - touchState.lastX;
+                const dy = touch.clientY - touchState.lastY;
+
+                trackpadDot.style.left = (touch.clientX - rect.left) + 'px';
+                trackpadDot.style.top = (touch.clientY - rect.top) + 'px';
+
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                    clearTimeout(touchState.longPressTimer);
+                    fetch('/move', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ x: dx * 1.5, y: dy * 1.5 })
+                    });
+                    touchState.lastX = touch.clientX;
+                    touchState.lastY = touch.clientY;
+                    touchState.moved = true;
+                }
+            }
+        });
+
+        trackpad.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            clearTimeout(touchState.longPressTimer);
+
+            if (touchState.isTwoFinger) {
+                if (e.touches.length < 2) touchState.isTwoFinger = false;
+                return;
+            }
+
+            if (!touchState.moved && (Date.now() - touchState.startTime) < 300) {
+                sendClick('left');
+            }
+
+            touchState.active = false;
+            trackpad.classList.remove('active');
+        });
+
+        trackpad.addEventListener('touchcancel', () => {
+            clearTimeout(touchState.longPressTimer);
+            touchState.active = false;
+            touchState.isTwoFinger = false;
+            trackpad.classList.remove('active');
+        });
+
+        // Mouse support for desktop testing
+        let mouseDown = false, mouseMoved = false, mouseStart = 0;
+
+        trackpad.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            mouseMoved = false;
+            mouseStart = Date.now();
+            touchState.lastX = e.clientX;
+            touchState.lastY = e.clientY;
+            trackpad.classList.add('active');
+            const rect = trackpad.getBoundingClientRect();
+            trackpadDot.style.left = (e.clientX - rect.left) + 'px';
+            trackpadDot.style.top = (e.clientY - rect.top) + 'px';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            const rect = trackpad.getBoundingClientRect();
+            trackpadDot.style.left = (e.clientX - rect.left) + 'px';
+            trackpadDot.style.top = (e.clientY - rect.top) + 'px';
+            const dx = e.clientX - touchState.lastX;
+            const dy = e.clientY - touchState.lastY;
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                fetch('/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x: dx * 1.5, y: dy * 1.5 })
+                });
+                touchState.lastX = e.clientX;
+                touchState.lastY = e.clientY;
+                mouseMoved = true;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!mouseDown) return;
+            mouseDown = false;
+            trackpad.classList.remove('active');
+            if (!mouseMoved) sendClick('left');
+        });
+
+        trackpad.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            fetch('/scroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ y: e.deltaY > 0 ? -4 : 4 })
+            });
+        }, { passive: false });
+
+        // ==================== VOLUME SLIDER ====================
+        let currentVolume = 50;
+        let sliderActive = false;
+        const sliderTrack = document.getElementById('sliderTrack');
+        const sliderFill = document.getElementById('sliderFill');
+        const sliderThumb = document.getElementById('sliderThumb');
+        const volumeValue = document.getElementById('volumeValue');
+
+        function updateSliderUI(vol) {
+            vol = Math.max(0, Math.min(100, vol));
+            currentVolume = vol;
+            sliderFill.style.width = vol + '%';
+            sliderThumb.style.left = vol + '%';
+            volumeValue.textContent = Math.round(vol) + '%';
+        }
+
+        function getSliderValue(clientX) {
+            const rect = sliderTrack.getBoundingClientRect();
+            const ratio = (clientX - rect.left) / rect.width;
+            return Math.max(0, Math.min(100, ratio * 100));
+        }
+
+        function handleVolumeChange(newVol) {
+            const diff = Math.round(newVol - currentVolume);
+            if (diff === 0) return;
+
+            const key = diff > 0 ? 'volumeup' : 'volumedown';
+            fetch('/key_repeat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: key, count: Math.abs(diff) })
+            });
+            updateSliderUI(newVol);
+        }
+
+        sliderThumb.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            sliderActive = true;
+        });
+
+        sliderTrack.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            sliderActive = true;
+            handleVolumeChange(getSliderValue(e.touches[0].clientX));
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!sliderActive) return;
+            handleVolumeChange(getSliderValue(e.touches[0].clientX));
+        });
+
+        document.addEventListener('touchend', () => {
+            sliderActive = false;
+        });
+
+        // Mouse support for slider
+        sliderThumb.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            sliderActive = true;
+        });
+
+        sliderTrack.addEventListener('mousedown', (e) => {
+            sliderActive = true;
+            handleVolumeChange(getSliderValue(e.clientX));
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!sliderActive) return;
+            handleVolumeChange(getSliderValue(e.clientX));
+        });
+
+        document.addEventListener('mouseup', () => {
+            sliderActive = false;
+        });
+
+        // Init slider
+        updateSliderUI(50);
+
+        // ==================== MUTE TOGGLE ====================
+        let isMuted = false;
+
+        function toggleMute() {
+            isMuted = !isMuted;
+
+            // Send the mute key to the PC
+            sendKey('volumemute');
+
+            // Swap the icon
+            const wrapper = document.getElementById('muteIconWrapper');
+            const iconName = isMuted ? 'volume-x' : 'volume-2';
+            wrapper.innerHTML = `<i data-lucide="${iconName}"></i>`;
+            lucide.createIcons({ nodes: [wrapper] });
+        }
+
+        // ==================== API CALLS ====================
+        function sendClick(button) {
+            fetch('/click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ button: button })
+            });
+        }
+
+        function sendKey(key) {
+            fetch('/key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: key })
+            });
+        }
+
+        function sendHotkey(...keys) {
+            fetch('/hotkey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keys: keys })
+            });
+        }
+
+        function sendType() {
+            const input = document.getElementById('textInput');
+            const text = input.value;
+            if (text) {
+                fetch('/type', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                input.value = '';
+                showToast('Text sent');
+            }
+        }
+
+        function toggleKeyboard() {
+            const toggle = document.getElementById('kbToggle');
+            const panel = document.getElementById('kbPanel');
+            toggle.classList.toggle('active');
+            panel.classList.toggle('show');
+        }
+
+        function shutdownServer() {
+            if (confirm('Stop the remote server?')) {
+                fetch('/shutdown', { method: 'POST' });
+                showToast('Server stopping...');
+                document.getElementById('statusDot').style.background = '#ef4444';
+                document.getElementById('statusDot').style.boxShadow = '0 0 8px #ef444480';
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Enter sends text
+        document.getElementById('textInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); sendType(); }
+        });
+
+        // Connection check
+        async function checkConnection() {
+            try {
+                await fetch('/', { method: 'HEAD' });
+                document.getElementById('statusDot').style.background = '#22c55e';
+                document.getElementById('statusDot').style.boxShadow = '0 0 8px #22c55e80';
+            } catch {
+                document.getElementById('statusDot').style.background = '#ef4444';
+                document.getElementById('statusDot').style.boxShadow = '0 0 8px #ef444480';
+            }
+        }
+        setInterval(checkConnection, 5000);
+    </script>
+</body>
+
+</html>
