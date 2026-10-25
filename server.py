@@ -3,6 +3,11 @@ from flask import Flask, render_template, request, jsonify
 import pyautogui
 import signal
 
+# Xbox controller support
+from controller_listener import XboxControllerListener
+
+controller_listener = XboxControllerListener()
+
 base_dir = os.path.dirname(os.path.abspath(__file__))
 template_dir = os.path.join(base_dir, 'templates')
 
@@ -32,6 +37,26 @@ def click():
     elif button == 'double':
         pyautogui.doubleClick()
     return jsonify({"status": "clicked"}), 200
+
+@app.route('/mouse_down', methods=['POST'])
+def mouse_down():
+    data = request.json
+    button = data.get('button', 'left')
+    if button == 'left':
+        pyautogui.mouseDown()
+    elif button == 'right':
+        pyautogui.mouseDown(button='right')
+    return jsonify({"status": "mouse_down"}), 200
+
+@app.route('/mouse_up', methods=['POST'])
+def mouse_up():
+    data = request.json
+    button = data.get('button', 'left')
+    if button == 'left':
+        pyautogui.mouseUp()
+    elif button == 'right':
+        pyautogui.mouseUp(button='right')
+    return jsonify({"status": "mouse_up"}), 200
 
 @app.route('/scroll', methods=['POST'])
 def scroll():
@@ -75,10 +100,32 @@ def hotkey():
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
+    controller_listener.stop()
     os.kill(os.getpid(), signal.SIGINT)
     return jsonify({"message": "Server shutting down..."})
 
+
+# ==================== XBOX CONTROLLER API ====================
+@app.route('/controller/status', methods=['GET'])
+def controller_status():
+    return jsonify(controller_listener.status()), 200
+
+
+@app.route('/controller/enable', methods=['POST'])
+def controller_enable():
+    controller_listener.enable()
+    return jsonify({"status": "enabled"}), 200
+
+
+@app.route('/controller/disable', methods=['POST'])
+def controller_disable():
+    controller_listener.disable()
+    return jsonify({"status": "disabled"}), 200
+
+
 if __name__ == '__main__':
+    # Start Xbox controller listener in background
+    controller_listener.start()
     print("=" * 50)
     print("  PC Remote Server Running")
     print("  Access at: http://<YOUR-PC-IP>:49200")

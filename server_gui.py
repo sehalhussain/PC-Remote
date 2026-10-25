@@ -16,6 +16,12 @@ import tempfile
 import base64
 import io
 
+# Xbox controller support
+from controller_listener import XboxControllerListener
+
+# Global controller listener instance
+controller_listener = XboxControllerListener()
+
 # Determine base directory for bundled app or source
 if getattr(sys, 'frozen', False):
     base_dir = os.path.dirname(sys.executable)  # For PyInstaller, use exe directory
@@ -57,6 +63,25 @@ def click():
         pyautogui.doubleClick()
     return jsonify({"status": "clicked"}), 200
 
+@app.route('/mouse_down', methods=['POST'])
+def mouse_down():
+    data = request.json
+    button = data.get('button', 'left')
+    if button == 'left':
+        pyautogui.mouseDown()
+    elif button == 'right':
+        pyautogui.mouseDown(button='right')
+    return jsonify({"status": "mouse_down"}), 200
+
+@app.route('/mouse_up', methods=['POST'])
+def mouse_up():
+    data = request.json
+    button = data.get('button', 'left')
+    if button == 'left':
+        pyautogui.mouseUp()
+    elif button == 'right':
+        pyautogui.mouseUp(button='right')
+    return jsonify({"status": "mouse_up"}), 200
 @app.route('/scroll', methods=['POST'])
 def scroll():
     data = request.json
@@ -101,6 +126,24 @@ def hotkey():
 def shutdown():
     os.kill(os.getpid(), signal.SIGINT)
     return jsonify({"message": "Server shutting down..."})
+
+
+# ==================== XBOX CONTROLLER API ====================
+@app.route('/controller/status', methods=['GET'])
+def controller_status():
+    return jsonify(controller_listener.status()), 200
+
+
+@app.route('/controller/enable', methods=['POST'])
+def controller_enable():
+    controller_listener.enable()
+    return jsonify({"status": "enabled"}), 200
+
+
+@app.route('/controller/disable', methods=['POST'])
+def controller_disable():
+    controller_listener.disable()
+    return jsonify({"status": "disabled"}), 200
 
 
 # ==================== WINDOWS CLIPBOARD ====================
@@ -450,9 +493,20 @@ class TrayIcon:
             daemon=True
         ).start()
     
+    def on_controller_enable(self, icon, item):
+        """Enable controller input"""
+        controller_listener.enable()
+        print("Controller enabled via tray")
+
+    def on_controller_disable(self, icon, item):
+        """Disable controller input"""
+        controller_listener.disable()
+        print("Controller disabled via tray")
+
     def on_quit(self, icon, item):
         """Quit the application"""
         self.running = False
+        controller_listener.stop()
         icon.stop()
         # Schedule exit on main thread to avoid issues
         threading.Thread(target=lambda: os.kill(os.getpid(), signal.SIGINT), daemon=True).start()
@@ -463,6 +517,9 @@ class TrayIcon:
             item('Show QR Code', self.on_show_qr),
             item('Copy URL', self.on_copy_url),
             item('---', None),
+            item('---', None),
+            item('Controller ON', self.on_controller_enable),
+            item('Controller OFF', self.on_controller_disable),
             item('Quit', self.on_quit)
         )
         
@@ -493,14 +550,17 @@ def run_server():
 if __name__ == '__main__':
     # Get connection URL
     current_url = get_connection_url()
-    
+
+    # Start Xbox controller listener in background
+    controller_listener.start()
+
     # Start server in background thread
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
-    
+
     # Show QR code in browser
     show_qr_dialog(current_url)
-    
+
     # Start tray icon
     tray = TrayIcon()
     tray.run()

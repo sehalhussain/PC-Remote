@@ -188,6 +188,68 @@ This server runs on your local network without authentication. Be cautious when 
 - Windows 11
 - Python 3.x
 
+## 🎮 Xbox Controller Support
+
+You can connect an Xbox controller (or any XInput/DirectInput gamepad) to your PC and use it as a remote. The controller runs in the background and maps buttons/sticks to PC actions.
+
+### How to use
+
+1. Connect your Xbox controller to the PC via USB or Bluetooth.
+2. Start the server (`python server_gui.py` or `python server.py`).
+3. The controller listener starts automatically and waits for a controller.
+4. When a controller is detected, it is **enabled by default** — you can start using it immediately.
+5. Open the web remote, and you'll see a **Controller** status pill showing the controller state.
+6. Click **Controller OFF** to disable input, or **Controller ON** to re-enable it.
+
+### Default button mapping
+
+| Control | Action |
+|---------|--------|
+| Left Stick | Move mouse cursor |
+| Left Stick + Hold LT | Drag file / drag-select (hold left mouse button) |
+| Right Stick | Scroll (vertical / horizontal) |
+| A button | Left click |
+| B button | Right click |
+| X button | Play / Pause media |
+| Y button | Mute toggle |
+| LT (hold) | Drag: hold left mouse button while moving the left stick |
+| RB | Next track |
+| Start | Fullscreen (F11) |
+| Back | Show Desktop (Win+D) |
+| D-pad Up | Volume Up (**repeat while held**) |
+| D-pad Down | Volume Down (**repeat while held**) |
+| D-pad Left | Arrow Left |
+| D-pad Right | Arrow Right |
+
+### Notes
+
+- **Controller is ON by default** when connected. Use the web UI toggle to disable/enable.
+- **D-pad volume**: Hold D-pad Up or Down to continuously increase/decrease volume.
+- **Drag mode**: Hold LT and move the Left Stick to drag files or select text. Release LT to drop.
+- If the controller is disconnected, it will auto-reconnect when plugged back in.
+
+### Installation
+
+Add `pygame` to your dependencies (already in `requirements.txt`):
+
+```bash
+pip install -r requirements.txt
+```
+
+Or individually:
+
+```bash
+pip install pygame
+```
+
+### Standalone test
+
+You can test the controller listener by itself:
+
+```bash
+py controller_listener.py
+```
+
 ## Developer
 
 **Sehal Hussain**

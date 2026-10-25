@@ -81,7 +81,7 @@
 
         /* Trackpad */
         .trackpad-container {
-            padding: 16px 16px 12px;
+            padding: 16px 16px 0;
         }
 
         .trackpad {
@@ -101,6 +101,15 @@
             background: #1c1c2e;
         }
 
+        .trackpad.drag-mode {
+            border-color: #f59e0b;
+        }
+
+        .trackpad.drag-mode.active {
+            border-color: #f59e0b;
+            background: #291f0a;
+        }
+
         .trackpad-dot {
             width: 20px;
             height: 20px;
@@ -111,6 +120,10 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.15s;
+        }
+
+        .trackpad.drag-mode .trackpad-dot {
+            background: radial-gradient(circle, #f59e0b 0%, #f59e0b00 70%);
         }
 
         .trackpad.active .trackpad-dot {
@@ -126,10 +139,82 @@
             color: #52525b;
             pointer-events: none;
             white-space: nowrap;
+            transition: color 0.2s;
         }
 
         .trackpad.active .trackpad-hint {
             color: #3b82f6;
+        }
+
+        .trackpad.drag-mode .trackpad-hint {
+            color: #78350f;
+        }
+
+        .trackpad.drag-mode.active .trackpad-hint {
+            color: #f59e0b;
+        }
+
+        /* Drag Mode Toggle Row */
+        .mode-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 16px 12px;
+        }
+
+        .mode-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #71717a;
+            transition: color 0.2s;
+        }
+
+        .mode-label.active {
+            color: #f59e0b;
+        }
+
+        .mode-switch {
+            width: 44px;
+            height: 26px;
+            border-radius: 13px;
+            background: #27272a;
+            border: 1.5px solid #3f3f46;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.25s;
+            flex-shrink: 0;
+        }
+
+        .mode-switch.active {
+            background: #f59e0b;
+            border-color: #f59e0b;
+        }
+
+        .mode-switch-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fafafa;
+            position: absolute;
+            top: 50%;
+            left: 2px;
+            transform: translateY(-50%);
+            transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .mode-switch.active .mode-switch-thumb {
+            left: 20px;
+        }
+
+        .mode-icon {
+            color: #52525b;
+            transition: color 0.2s;
+        }
+
+        .mode-icon.active {
+            color: #f59e0b;
         }
 
         /* Click Buttons */
@@ -575,6 +660,16 @@
             background: #27272a;
             border-radius: 2px;
         }
+
+        .media-btn.play-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    margin: 0 8px;
+    transition: transform 0.12s, background 0.15s;
+}
     </style>
 </head>
 
@@ -589,6 +684,10 @@
             <div class="status-dot" id="statusDot"></div>
             Connected
         </div>
+        <div class="status-pill" id="controllerPill" style="display:none;">
+            <div class="status-dot" id="controllerDot"></div>
+            <span id="controllerText">Controller: Disconnected</span>
+        </div>
     </div>
 
     <div class="divider"></div>
@@ -597,7 +696,18 @@
     <div class="trackpad-container">
         <div class="trackpad" id="trackpad">
             <div class="trackpad-dot" id="trackpadDot"></div>
-            <span class="trackpad-hint">Tap to click · Hold for right-click · Two-finger scroll</span>
+            <span class="trackpad-hint" id="trackpadHint">Tap to click · Hold for right-click · Two-finger scroll</span>
+        </div>
+    </div>
+
+    <!-- Drag Mode Toggle -->
+    <div class="mode-row">
+        <div class="mode-icon" id="modeIcon">
+            <i data-lucide="move" style="width:16px;height:16px"></i>
+        </div>
+        <span class="mode-label" id="modeLabel">Drag Mode</span>
+        <div class="mode-switch" id="modeSwitch" onclick="toggleDragMode()">
+            <div class="mode-switch-thumb"></div>
         </div>
     </div>
 
@@ -637,30 +747,38 @@
                 <i data-lucide="monitor"></i>
                 Desktop
             </button>
+            <button class="quick-btn" onclick="enableController()" id="controllerEnableBtn">
+                <i data-lucide="gamepad-2"></i>
+                Controller ON
+            </button>
+            <button class="quick-btn" onclick="disableController()" id="controllerDisableBtn" style="display:none;">
+                <i data-lucide="gamepad-off"></i>
+                Controller OFF
+            </button>
         </div>
     </div>
 
     <!-- Media Controls -->
-    <div class="section">
-        <div class="section-label">Media</div>
-        <div class="media-card">
-            <button class="media-btn" onclick="sendKey('prevtrack')">
-                <i data-lucide="skip-back"></i>
-            </button>
-            <button class="media-btn" onclick="sendKey('stop')">
-                <i data-lucide="square"></i>
-            </button>
-            <button class="media-btn play-btn" onclick="sendKey('playpause')">
-                <i data-lucide="play"></i>
-            </button>
-            <button class="media-btn" onclick="sendKey('stop')">
-                <i data-lucide="square"></i>
-            </button>
-            <button class="media-btn" onclick="sendKey('nexttrack')">
-                <i data-lucide="skip-forward"></i>
-            </button>
-        </div>
+<div class="section">
+    <div class="section-label">Media</div>
+    <div class="media-card">
+        <button class="media-btn" onclick="sendKey('prevtrack')">
+            <i data-lucide="skip-back"></i>
+        </button>
+        <button class="media-btn" onclick="sendKey('rewind')">
+            <i data-lucide="rotate-ccw"></i>
+        </button>
+        <button class="media-btn play-btn" id="playPauseBtn" onclick="togglePlayPause()">
+            <i data-lucide="play" id="playPauseIcon"></i>
+        </button>
+        <button class="media-btn" onclick="sendKey('fastforward')">
+            <i data-lucide="rotate-cw"></i>
+        </button>
+        <button class="media-btn" onclick="sendKey('nexttrack')">
+            <i data-lucide="skip-forward"></i>
+        </button>
     </div>
+</div>
 
     <!-- Volume -->
     <div class="section">
@@ -734,6 +852,31 @@
         // Initialize Lucide icons
         lucide.createIcons();
 
+        // ==================== DRAG MODE ====================
+        let dragMode = false;
+
+        function toggleDragMode() {
+            dragMode = !dragMode;
+            const sw = document.getElementById('modeSwitch');
+            const label = document.getElementById('modeLabel');
+            const icon = document.getElementById('modeIcon');
+            const tp = document.getElementById('trackpad');
+            const hint = document.getElementById('trackpadHint');
+
+            sw.classList.toggle('active', dragMode);
+            label.classList.toggle('active', dragMode);
+            icon.classList.toggle('active', dragMode);
+            tp.classList.toggle('drag-mode', dragMode);
+
+            if (dragMode) {
+                hint.textContent = 'Touch to grab · Move to drag · Release to drop';
+                showToast('Drag mode ON');
+            } else {
+                hint.textContent = 'Tap to click · Hold for right-click · Two-finger scroll';
+                showToast('Drag mode OFF');
+            }
+        }
+
         // ==================== TRACKPAD ====================
         const trackpad = document.getElementById('trackpad');
         const trackpadDot = document.getElementById('trackpadDot');
@@ -745,7 +888,8 @@
             startTime: 0,
             moved: false,
             isTwoFinger: false,
-            twoFingerLastY: 0
+            twoFingerLastY: 0,
+            longPressTimer: null
         };
 
         document.addEventListener('touchmove', (e) => {
@@ -758,12 +902,34 @@
             e.preventDefault();
             const touches = e.touches;
 
+            // --- Drag mode: single finger drag ---
+            if (dragMode && touches.length === 1) {
+                const touch = touches[0];
+                const rect = trackpad.getBoundingClientRect();
+                touchState.active = true;
+                touchState.lastX = touch.clientX;
+                touchState.lastY = touch.clientY;
+                touchState.moved = false;
+                trackpad.classList.add('active');
+                trackpadDot.style.left = (touch.clientX - rect.left) + 'px';
+                trackpadDot.style.top = (touch.clientY - rect.top) + 'px';
+                // Mouse down immediately
+                fetch('/mouse_down', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ button: 'left' })
+                });
+                return;
+            }
+
+            // --- Two-finger scroll (works in both modes) ---
             if (touches.length >= 2) {
                 touchState.isTwoFinger = true;
                 touchState.twoFingerLastY = (touches[0].clientY + touches[1].clientY) / 2;
                 return;
             }
 
+            // --- Normal mode: move cursor ---
             const touch = touches[0];
             const rect = trackpad.getBoundingClientRect();
             touchState.active = true;
@@ -792,12 +958,13 @@
             e.preventDefault();
             const touches = e.touches;
 
+            // --- Two-finger scroll ---
             if (touchState.isTwoFinger && touches.length >= 2) {
                 clearTimeout(touchState.longPressTimer);
                 const currentY = (touches[0].clientY + touches[1].clientY) / 2;
                 const delta = touchState.twoFingerLastY - currentY;
-                if (Math.abs(delta) > 8) {
-                    const scrollAmt = delta > 0 ? 4 : -4;
+                if (Math.abs(delta) > 3) {
+                    const scrollAmt = delta > 0 ? 12 : -12;
                     fetch('/scroll', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -818,7 +985,9 @@
                 trackpadDot.style.top = (touch.clientY - rect.top) + 'px';
 
                 if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-                    clearTimeout(touchState.longPressTimer);
+                    if (!dragMode) {
+                        clearTimeout(touchState.longPressTimer);
+                    }
                     fetch('/move', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -835,11 +1004,25 @@
             e.preventDefault();
             clearTimeout(touchState.longPressTimer);
 
+            // Two-finger: just track finger count
             if (touchState.isTwoFinger) {
                 if (e.touches.length < 2) touchState.isTwoFinger = false;
                 return;
             }
 
+            // --- Drag mode: mouse up on release ---
+            if (dragMode && touchState.active) {
+                fetch('/mouse_up', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ button: 'left' })
+                });
+                touchState.active = false;
+                trackpad.classList.remove('active');
+                return;
+            }
+
+            // --- Normal mode: tap to click ---
             if (!touchState.moved && (Date.now() - touchState.startTime) < 300) {
                 sendClick('left');
             }
@@ -850,12 +1033,19 @@
 
         trackpad.addEventListener('touchcancel', () => {
             clearTimeout(touchState.longPressTimer);
+            if (dragMode && touchState.active) {
+                fetch('/mouse_up', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ button: 'left' })
+                });
+            }
             touchState.active = false;
             touchState.isTwoFinger = false;
             trackpad.classList.remove('active');
         });
 
-        // Mouse support for desktop testing
+        // ==================== MOUSE SUPPORT (desktop testing) ====================
         let mouseDown = false, mouseMoved = false, mouseStart = 0;
 
         trackpad.addEventListener('mousedown', (e) => {
@@ -868,6 +1058,14 @@
             const rect = trackpad.getBoundingClientRect();
             trackpadDot.style.left = (e.clientX - rect.left) + 'px';
             trackpadDot.style.top = (e.clientY - rect.top) + 'px';
+
+            if (dragMode) {
+                fetch('/mouse_down', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ button: 'left' })
+                });
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -893,15 +1091,25 @@
             if (!mouseDown) return;
             mouseDown = false;
             trackpad.classList.remove('active');
-            if (!mouseMoved) sendClick('left');
+
+            if (dragMode) {
+                fetch('/mouse_up', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ button: 'left' })
+                });
+            } else {
+                if (!mouseMoved) sendClick('left');
+            }
         });
 
         trackpad.addEventListener('wheel', (e) => {
             e.preventDefault();
+            const scrollAmt = e.deltaY > 0 ? -12 : 12;
             fetch('/scroll', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ y: e.deltaY > 0 ? -4 : 4 })
+                body: JSON.stringify({ y: scrollAmt })
             });
         }, { passive: false });
 
@@ -988,15 +1196,30 @@
 
         function toggleMute() {
             isMuted = !isMuted;
-
-            // Send the mute key to the PC
             sendKey('volumemute');
-
-            // Swap the icon
             const wrapper = document.getElementById('muteIconWrapper');
             const iconName = isMuted ? 'volume-x' : 'volume-2';
             wrapper.innerHTML = `<i data-lucide="${iconName}"></i>`;
             lucide.createIcons({ nodes: [wrapper] });
+        }
+
+        // ==================== PLAY/PAUSE TOGGLE ====================
+        let isPlaying = false;
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            sendKey('playpause');
+
+            const btn = document.getElementById('playPauseBtn');
+            const wrapper = document.getElementById('playPauseIcon');
+            const iconName = isPlaying ? 'pause' : 'play';
+
+            wrapper.setAttribute('data-lucide', iconName);
+            lucide.createIcons({ nodes: [wrapper] });
+
+            // Visual feedback: briefly scale
+            btn.style.transform = 'scale(0.88)';
+            setTimeout(() => { btn.style.transform = ''; }, 120);
         }
 
         // ==================== API CALLS ====================
@@ -1072,11 +1295,63 @@
                 await fetch('/', { method: 'HEAD' });
                 document.getElementById('statusDot').style.background = '#22c55e';
                 document.getElementById('statusDot').style.boxShadow = '0 0 8px #22c55e80';
+                // Also poll controller status
+                await checkControllerStatus();
             } catch {
                 document.getElementById('statusDot').style.background = '#ef4444';
                 document.getElementById('statusDot').style.boxShadow = '0 0 8px #ef444480';
+                document.getElementById('controllerPill').style.display = 'none';
             }
         }
+
+        async function checkControllerStatus() {
+            try {
+                const res = await fetch('/controller/status');
+                const data = await res.json();
+                const pill = document.getElementById('controllerPill');
+                const dot = document.getElementById('controllerDot');
+                const text = document.getElementById('controllerText');
+                const enableBtn = document.getElementById('controllerEnableBtn');
+                const disableBtn = document.getElementById('controllerDisableBtn');
+                if (data.error) {
+                    pill.style.display = 'flex';
+                    dot.style.background = '#ef4444';
+                    dot.style.boxShadow = '0 0 8px #ef444480';
+                    text.textContent = `Controller error: ${data.error}`;
+                    enableBtn.style.display = 'none';
+                    disableBtn.style.display = 'none';
+                } else if (data.connected) {
+                    pill.style.display = 'flex';
+                    dot.style.background = data.enabled ? '#22c55e' : '#a1a1aa';
+                    dot.style.boxShadow = data.enabled ? '0 0 8px #22c55e80' : '0 0 8px #a1a1aa80';
+                    text.textContent = `Controller: ${data.controller_name || 'Xbox Controller'} (${data.enabled ? 'ON' : 'OFF'})`;
+                    if (data.enabled) {
+                        enableBtn.style.display = 'none';
+                        disableBtn.style.display = 'flex';
+                    } else {
+                        enableBtn.style.display = 'flex';
+                        disableBtn.style.display = 'none';
+                    }
+                } else {
+                    pill.style.display = 'none';
+                    enableBtn.style.display = 'none';
+                    disableBtn.style.display = 'none';
+                }
+            } catch {
+                // Ignore errors
+            }
+        }
+
+        function enableController() {
+            fetch('/controller/enable', { method: 'POST' })
+                .then(() => showToast('Controller enabled'));
+        }
+
+        function disableController() {
+            fetch('/controller/disable', { method: 'POST' })
+                .then(() => showToast('Controller disabled'));
+        }
+
         setInterval(checkConnection, 5000);
     </script>
 </body>
